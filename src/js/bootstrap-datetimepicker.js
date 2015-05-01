@@ -427,10 +427,14 @@
             },
 
             notifyEvent = function (e) {
-                if (e.type === 'dp.change' && ((e.date && e.date.isSame(e.oldDate)) || (!e.date && !e.oldDate))) {
-                    return;
+                if (options.enableWeekSelect) {
+                    element.trigger(e);
+                } else {
+                    if (e.type === 'dp.change' && ((e.date && e.date.isSame(e.oldDate)) || (!e.date && !e.oldDate))) {
+                        return;
+                    }
+                    element.trigger(e);
                 }
-                element.trigger(e);
             },
 
             showMode = function (dir) {
@@ -695,48 +699,59 @@
             },
 
             setValue = function (targetMoment) {
-                var oldDate = unset ? null : date;
-
-                // case of calling setValue(null or false)
-                if (!targetMoment) {
-                    unset = true;
-                    input.val('');
-                    element.data('date', '');
+                if(options.enableWeekSelect){
+                    var weekPeriod = targetMoment;
+                    input.val(weekPeriod);
+                    element.data('date', weekPeriod);
                     notifyEvent({
                         type: 'dp.change',
-                        date: null,
-                        oldDate: oldDate
-                    });
-                    update();
-                    return;
-                }
-
-                targetMoment = targetMoment.clone().locale(options.locale);
-
-                if (options.stepping !== 1) {
-                    targetMoment.minutes((Math.round(targetMoment.minutes() / options.stepping) * options.stepping) % 60).seconds(0);
-                }
-
-                if (isValid(targetMoment)) {
-                    date = targetMoment;
-                    viewDate = date.clone();
-                    input.val(date.format(actualFormat));
-                    element.data('date', date.format(actualFormat));
-                    update();
-                    unset = false;
-                    notifyEvent({
-                        type: 'dp.change',
-                        date: date.clone(),
+                        date: weekPeriod,
                         oldDate: oldDate
                     });
                 } else {
-                    if (!options.keepInvalid) {
-                        input.val(unset ? '' : date.format(actualFormat));
+                    var oldDate = unset ? null : date;
+
+                    // case of calling setValue(null or false)
+                    if (!targetMoment) {
+                        unset = true;
+                        input.val('');
+                        element.data('date', '');
+                        notifyEvent({
+                            type: 'dp.change',
+                            date: null,
+                            oldDate: oldDate
+                        });
+                        update();
+                        return;
                     }
-                    notifyEvent({
-                        type: 'dp.error',
-                        date: targetMoment
-                    });
+
+                    targetMoment = targetMoment.clone().locale(options.locale);
+
+                    if (options.stepping !== 1) {
+                        targetMoment.minutes((Math.round(targetMoment.minutes() / options.stepping) * options.stepping) % 60).seconds(0);
+                    }
+
+                    if (isValid(targetMoment)) {
+                        date = targetMoment;
+                        viewDate = date.clone();
+                        input.val(date.format(actualFormat));
+                        element.data('date', date.format(actualFormat));
+                        update();
+                        unset = false;
+                        notifyEvent({
+                            type: 'dp.change',
+                            date: date.clone(),
+                            oldDate: oldDate
+                        });
+                    } else {
+                        if (!options.keepInvalid) {
+                            input.val(unset ? '' : date.format(actualFormat));
+                        }
+                        notifyEvent({
+                            type: 'dp.error',
+                            date: targetMoment
+                        });
+                    }
                 }
             },
 
@@ -829,16 +844,28 @@
                 },
 
                 selectDay: function (e) {
-                    var day = viewDate.clone();
-                    if ($(e.target).is('.old')) {
-                        day.subtract(1, 'M');
-                    }
-                    if ($(e.target).is('.new')) {
-                        day.add(1, 'M');
-                    }
-                    setValue(day.date(parseInt($(e.target).text(), 10)));
-                    if (!hasTime() && !options.keepOpen && !options.inline) {
-                        hide();
+                    if(options.enableWeekSelect){
+                        var firstWeekDay = $(e.target).siblings('td.day').first().text();
+                        var lastWeekDay = $(e.target).siblings('td.day').last().text();
+
+                        var yearAndMonth = $('.picker-switch:visible').text();
+
+                        var firstWeekDate = moment(yearAndMonth + ', ' + firstWeekDay).format(options.format);
+                        var lastWeekDate = moment(yearAndMonth + ', ' + lastWeekDay).format(options.format);
+
+                        setValue(firstWeekDate + ' - ' + lastWeekDate);
+                    } else {
+                        var day = viewDate.clone();
+                        if ($(e.target).is('.old')) {
+                            day.subtract(1, 'M');
+                        }
+                        if ($(e.target).is('.new')) {
+                            day.add(1, 'M');
+                        }
+                        setValue(day.date(parseInt($(e.target).text(), 10)));
+                        if (!hasTime() && !options.keepOpen && !options.inline) {
+                            hide();
+                        }
                     }
                 },
 
@@ -1014,6 +1041,18 @@
                 widget.on('click', '[data-action]', doAction); // this handles clicks on the widget
                 widget.on('mousedown', false);
 
+
+                if (options.enableWeekSelect) {
+                    widget.on('mouseover', '.datepicker-days table tr .day', function(){
+                        $(this).closest('tr').addClass('week-hovered');
+                    });
+
+
+                    widget.on('mouseout', '.datepicker-days table tr .day', function(){
+                        $(this).closest('tr').removeClass('week-hovered');
+                    });
+                }
+
                 if (component && component.hasClass('btn')) {
                     component.toggleClass('active');
                 }
@@ -1109,11 +1148,20 @@
             },
 
             change = function (e) {
-                var val = $(e.target).val().trim(),
+                if(options.enableWeekSelect){
+                    /* Don't do anything since the keyboard input is disabled.
+                     * If the keyboard input is needed, we should add a validation for the
+                     * resulting format of the week period. Right now, the format is:
+                     * startDateFormatted - endDateFormatted
+                     */
+                } else {
+                    var val = $(e.target).val().trim(),
                     parsedDate = val ? parseInputDate(val) : null;
-                setValue(parsedDate);
-                e.stopImmediatePropagation();
-                return false;
+                    setValue(parsedDate);
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
             },
 
             attachDatePickerElementEvents = function () {
@@ -1272,19 +1320,27 @@
         };
 
         picker.date = function (newDate) {
-            if (arguments.length === 0) {
-                if (unset) {
-                    return null;
+            if (options.enableWeekSelect) {
+                /* Don't do anything since the keyboard input is disabled.
+                 * If the keyboard input is needed, we should add a validation for the
+                 * resulting format of the week period. Right now, the format is:
+                 * startDateFormatted - endDateFormatted
+                 */
+            } else {
+                if (arguments.length === 0) {
+                    if (unset) {
+                        return null;
+                    }
+                    return date.clone();
                 }
-                return date.clone();
-            }
 
-            if (newDate !== null && typeof newDate !== 'string' && !moment.isMoment(newDate) && !(newDate instanceof Date)) {
-                throw new TypeError('date() parameter must be one of [null, string, moment or Date]');
-            }
+                if (newDate !== null && typeof newDate !== 'string' && !moment.isMoment(newDate) && !(newDate instanceof Date)) {
+                    throw new TypeError('date() parameter must be one of [null, string, moment or Date]');
+                }
 
-            setValue(newDate === null ? null : parseInputDate(newDate));
-            return picker;
+                setValue(newDate === null ? null : parseInputDate(newDate));
+                return picker;
+            }
         };
 
         picker.format = function (newFormat) {
@@ -1834,6 +1890,15 @@
             return picker;
         };
 
+        picker.enableWeekSelect = function (enableWeekSelect) {
+            if (typeof enableWeekSelect !== 'boolean') {
+                throw new TypeError('enableWeekSelect() expects a boolean parameter');
+            }
+
+            options.enableWeekSelect = enableWeekSelect;
+            return picker;
+        };
+
         // initializing element and component attributes
         if (element.is('input')) {
             input = element;
@@ -1879,6 +1944,14 @@
         if (options.inline) {
             show();
         }
+
+        if (options.enableWeekSelect) {
+            // Disable keyboard input so we don't need to validate the week format
+            input.on('keypress', function(event){
+                event.preventDefault();
+            });
+        }
+
         return picker;
     };
 
