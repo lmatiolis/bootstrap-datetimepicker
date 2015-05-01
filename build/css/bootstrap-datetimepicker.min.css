@@ -354,6 +354,9 @@
 .input-group.date .input-group-addon {
   cursor: pointer;
 }
+.week-hovered {
+  background-color: #eeeeee;
+}
 .sr-only {
   position: absolute;
   width: 1px;
