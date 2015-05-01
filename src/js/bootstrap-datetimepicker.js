@@ -33,6 +33,7 @@
 /*global require:false */
 /*global jQuery:false */
 /*global moment:false */
+/* jshint -W030 */
 (function (factory) {
     'use strict';
     if (typeof define === 'function' && define.amd) {
