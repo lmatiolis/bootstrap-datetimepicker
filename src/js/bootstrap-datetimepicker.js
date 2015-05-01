@@ -699,8 +699,11 @@
             },
 
             setValue = function (targetMoment) {
-                if(options.enableWeekSelect){
-                    var weekPeriod = targetMoment;
+                var weekPeriod,
+                    oldDate;
+
+                if (options.enableWeekSelect) {
+                    weekPeriod = targetMoment;
                     input.val(weekPeriod);
                     element.data('date', weekPeriod);
                     notifyEvent({
@@ -709,7 +712,7 @@
                         oldDate: oldDate
                     });
                 } else {
-                    var oldDate = unset ? null : date;
+                    oldDate = unset ? null : date;
 
                     // case of calling setValue(null or false)
                     if (!targetMoment) {
@@ -844,18 +847,25 @@
                 },
 
                 selectDay: function (e) {
-                    if(options.enableWeekSelect){
-                        var firstWeekDay = $(e.target).siblings('td.day').first().text();
-                        var lastWeekDay = $(e.target).siblings('td.day').last().text();
+                    var firstWeekDay,
+                        lastWeekDay,
+                        yearAndMonth,
+                        firstWeekDate,
+                        lastWeekDate,
+                        day;
 
-                        var yearAndMonth = $('.picker-switch:visible').text();
+                    if (options.enableWeekSelect) {
+                        firstWeekDay = $(e.target).siblings('td.day').first().text(),
+                        lastWeekDay = $(e.target).siblings('td.day').last().text(),
 
-                        var firstWeekDate = moment(yearAndMonth + ', ' + firstWeekDay).format(options.format);
-                        var lastWeekDate = moment(yearAndMonth + ', ' + lastWeekDay).format(options.format);
+                        yearAndMonth = $('.picker-switch:visible').text(),
+
+                        firstWeekDate = moment(yearAndMonth + ', ' + firstWeekDay).format(options.format);
+                        lastWeekDate = moment(yearAndMonth + ', ' + lastWeekDay).format(options.format);
 
                         setValue(firstWeekDate + ' - ' + lastWeekDate);
                     } else {
-                        var day = viewDate.clone();
+                        day = viewDate.clone();
                         if ($(e.target).is('.old')) {
                             day.subtract(1, 'M');
                         }
@@ -1043,12 +1053,11 @@
 
 
                 if (options.enableWeekSelect) {
-                    widget.on('mouseover', '.datepicker-days table tr .day', function(){
+                    widget.on('mouseover', '.datepicker-days table tr .day', function () {
                         $(this).closest('tr').addClass('week-hovered');
                     });
 
-
-                    widget.on('mouseout', '.datepicker-days table tr .day', function(){
+                    widget.on('mouseout', '.datepicker-days table tr .day', function () {
                         $(this).closest('tr').removeClass('week-hovered');
                     });
                 }
@@ -1148,20 +1157,18 @@
             },
 
             change = function (e) {
-                if(options.enableWeekSelect){
-                    /* Don't do anything since the keyboard input is disabled.
-                     * If the keyboard input is needed, we should add a validation for the
-                     * resulting format of the week period. Right now, the format is:
-                     * startDateFormatted - endDateFormatted
-                     */
-                } else {
+                /* Don't do anything since the keyboard input is disabled.
+                 * If the keyboard input is needed, we should add a validation for the
+                 * resulting format of the week period. Right now, the format is:
+                 * startDateFormatted - endDateFormatted
+                 */
+                if (!options.enableWeekSelect) {
                     var val = $(e.target).val().trim(),
                     parsedDate = val ? parseInputDate(val) : null;
                     setValue(parsedDate);
                     e.stopImmediatePropagation();
                     return false;
                 }
-
             },
 
             attachDatePickerElementEvents = function () {
@@ -1320,13 +1327,12 @@
         };
 
         picker.date = function (newDate) {
-            if (options.enableWeekSelect) {
-                /* Don't do anything since the keyboard input is disabled.
-                 * If the keyboard input is needed, we should add a validation for the
-                 * resulting format of the week period. Right now, the format is:
-                 * startDateFormatted - endDateFormatted
-                 */
-            } else {
+            /* Don't do anything since the keyboard input is disabled.
+             * If the keyboard input is needed, we should add a validation for the
+             * resulting format of the week period. Right now, the format is:
+             * startDateFormatted - endDateFormatted
+             */
+            if (!options.enableWeekSelect) {
                 if (arguments.length === 0) {
                     if (unset) {
                         return null;
@@ -1947,7 +1953,7 @@
 
         if (options.enableWeekSelect) {
             // Disable keyboard input so we don't need to validate the week format
-            input.on('keypress', function(event){
+            input.on('keypress', function (event) {
                 event.preventDefault();
             });
         }
