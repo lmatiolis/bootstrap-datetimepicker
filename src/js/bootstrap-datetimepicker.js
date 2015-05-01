@@ -848,31 +848,39 @@
                 },
 
                 selectDay: function (e) {
-                    var firstWeekDay,
-                        lastWeekDay,
+                    var $firstWeekDay,
+                        $lastWeekDay,
+                        firstWeekDayValue,
+                        lastWeekDayValue,
                         yearAndMonth,
                         firstWeekDate,
                         lastWeekDate,
+                        firstWeekDateFormatted,
+                        lastWeekDateFormatted,
                         day;
 
                     if (options.enableWeekSelect) {
-                        firstWeekDay = $(e.target).siblings('td.day').first().text(),
-                        lastWeekDay = $(e.target).siblings('td.day').last().text(),
+                        $firstWeekDay = $(e.target).siblings('td.day').first();
+                        $lastWeekDay = $(e.target).siblings('td.day').last();
 
-                        yearAndMonth = $('.picker-switch:visible').text(),
+                        firstWeekDayValue = $firstWeekDay.text();
+                        lastWeekDayValue = $lastWeekDay.text();
 
-                        firstWeekDate = moment(yearAndMonth + ', ' + firstWeekDay).format(options.format);
-                        lastWeekDate = moment(yearAndMonth + ', ' + lastWeekDay).format(options.format);
+                        yearAndMonth = $('.picker-switch:visible').text();
 
-                        setValue(firstWeekDate + ' - ' + lastWeekDate);
+                        firstWeekDate = moment(yearAndMonth + ', ' + firstWeekDayValue);
+                        lastWeekDate = moment(yearAndMonth + ', ' + lastWeekDayValue);
+
+                        convertDateToOldOrNewMonth(firstWeekDate, $firstWeekDay);
+                        convertDateToOldOrNewMonth(lastWeekDate, $lastWeekDay);
+
+                        firstWeekDateFormatted = firstWeekDate.format(options.format);
+                        lastWeekDateFormatted = lastWeekDate.format(options.format);
+
+                        setValue(firstWeekDateFormatted + ' - ' + lastWeekDateFormatted);
                     } else {
                         day = viewDate.clone();
-                        if ($(e.target).is('.old')) {
-                            day.subtract(1, 'M');
-                        }
-                        if ($(e.target).is('.new')) {
-                            day.add(1, 'M');
-                        }
+                        convertDateToOldOrNewMonth(day, $(e.target));
                         setValue(day.date(parseInt($(e.target).text(), 10)));
                         if (!hasTime() && !options.keepOpen && !options.inline) {
                             hide();
@@ -1254,6 +1262,14 @@
 
                 if (!unset) {
                     setValue(date);
+                }
+            },
+
+            convertDateToOldOrNewMonth = function (dateMoment, $element) {
+                if ($element.is('.old')) {
+                    dateMoment.subtract(1, 'M');
+                } else if ($element.is('.new')) {
+                    dateMoment.add(1, 'M');
                 }
             };
 
